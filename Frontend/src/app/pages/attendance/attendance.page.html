@@ -1,0 +1,102 @@
+<div class="page-head">
+  <div>
+    <h2>Mark attendance</h2>
+    <p class="muted">Pick a class and date, mark each student, then save.</p>
+  </div>
+</div>
+
+@if (setupLoading()) {
+  <div class="card"><div class="loading"><span class="spinner"></span> Loading classes and teachers…</div></div>
+} @else if (setupError()) {
+  <div class="alert alert-error">{{ setupError() }}</div>
+} @else {
+  <div class="card">
+    <div class="filters-grid">
+      <div class="field">
+        <label for="a-class">Class</label>
+        <select id="a-class" class="input" [ngModel]="classId()" (ngModelChange)="onClass($event)">
+          <option [ngValue]="null">Select a class…</option>
+          @for (c of classes(); track c.id) { <option [ngValue]="c.id">{{ classLabel(c) }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="a-date">Date</label>
+        <input id="a-date" class="input" type="date" [max]="today" [ngModel]="date()" (ngModelChange)="onDate($event)" />
+      </div>
+      <div class="field">
+        <label for="a-teacher">Marked by (teacher)</label>
+        <select id="a-teacher" class="input" [ngModel]="teacherId()" (ngModelChange)="teacherId.set($event)">
+          <option [ngValue]="null">Select a teacher…</option>
+          @for (t of teachers(); track t.id) { <option [ngValue]="t.id">{{ t.name }} · {{ t.subject }}</option> }
+        </select>
+      </div>
+    </div>
+    @if (classes().length === 0) {
+      <p class="hint">No classes found. Create a class (and add students) first.</p>
+    }
+    @if (teachers().length === 0) {
+      <p class="hint">No teachers found. The backend requires a teacher for every attendance submission.</p>
+    }
+  </div>
+
+  @if (classId() === null) {
+    <div class="card"><app-empty-state icon="attendance" title="Select a class" message="Choose a class and date to load its students." /></div>
+  } @else if (loading()) {
+    <div class="card"><div class="loading"><span class="spinner"></span> Loading students…</div></div>
+  } @else if (loaded()) {
+    <div class="card">
+      @if (rows().length === 0) {
+        <app-empty-state icon="students" title="No students in this class" message="Add students to this class on the Students page." />
+      } @else {
+        <div class="toolbar">
+          <div class="chips">
+            <span class="chip">{{ rows().length }} students</span>
+            <span class="chip chip-success">{{ presentCount() }} present</span>
+            <span class="chip chip-danger">{{ absentCount() }} absent</span>
+            @if (unselected() > 0) { <span class="chip">{{ unselected() }} not marked</span> }
+            @if (savedCount() > 0) { <span class="chip chip-info">{{ savedCount() }} already saved</span> }
+          </div>
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="markAll('PRESENT')">All present</button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="markAll('ABSENT')">All absent</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Roll no.</th><th>Name</th><th>Status</th><th class="actions-col">Saved</th></tr></thead>
+            <tbody>
+              @for (r of rows(); track r.student.id; let i = $index) {
+                <tr>
+                  <td data-label="Roll no.">{{ r.student.rollNo }}</td>
+                  <td data-label="Name"><strong>{{ r.student.name }}</strong></td>
+                  <td data-label="Status">
+                    <div class="seg" role="group" [attr.aria-label]="'Status for ' + r.student.name">
+                      <button type="button" [class.on-present]="r.status === 'PRESENT'" (click)="setStatus(i, 'PRESENT')">Present</button>
+                      <button type="button" [class.on-absent]="r.status === 'ABSENT'" (click)="setStatus(i, 'ABSENT')">Absent</button>
+                    </div>
+                  </td>
+                  <td class="actions-col">
+                    @if (r.recordId !== null) {
+                      <span class="badge" [class.badge-success]="r.savedStatus === 'PRESENT'" [class.badge-danger]="r.savedStatus === 'ABSENT'">{{ r.savedStatus }}</span>
+                      @if (r.status !== r.savedStatus) { <span class="badge badge-warn">changed</span> }
+                      <button type="button" class="icon-btn danger" title="Delete saved record" aria-label="Delete saved record" (click)="deleteRecord(i)"><app-icon name="trash" /></button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="form-actions sticky-actions">
+          <span class="muted">{{ changeCount() }} change(s) to save</span>
+          <button type="button" class="btn btn-primary" [disabled]="saving() || changeCount() === 0" (click)="save()">
+            @if (saving()) { <span class="spinner spinner-sm"></span> } Save attendance
+          </button>
+        </div>
+      }
+    </div>
+  }
+}

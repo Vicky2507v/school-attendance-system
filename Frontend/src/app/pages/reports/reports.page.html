@@ -1,0 +1,218 @@
+<div class="page-head">
+  <div>
+    <h2>Attendance reports</h2>
+    <p class="muted">Student history, monthly summaries, class reports and custom date ranges.</p>
+  </div>
+</div>
+
+@if (setupLoading()) {
+  <div class="card"><div class="loading"><span class="spinner"></span> Loading…</div></div>
+} @else if (setupError()) {
+  <div class="alert alert-error">{{ setupError() }}</div>
+} @else {
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" [class.active]="tab() === 'history'" (click)="setTab('history')">Student history</button>
+    <button type="button" role="tab" [class.active]="tab() === 'monthly'" (click)="setTab('monthly')">Student monthly</button>
+    <button type="button" role="tab" [class.active]="tab() === 'class'" (click)="setTab('class')">Class monthly</button>
+    <button type="button" role="tab" [class.active]="tab() === 'range'" (click)="setTab('range')">Date range</button>
+  </div>
+
+  @if (students().length === 0 && tab() !== 'class') {
+    <div class="card"><app-empty-state icon="students" title="No students" message="Add students and mark attendance to generate reports." /></div>
+  } @else {
+
+  @switch (tab()) {
+    @case ('history') {
+      <div class="card">
+        <form class="filters-grid" [formGroup]="historyForm" (ngSubmit)="runHistory()" novalidate>
+          <div class="field grow">
+            <label for="h-student">Student</label>
+            <select id="h-student" class="input" formControlName="studentId">
+              <option [ngValue]="null">Select a student…</option>
+              @for (s of students(); track s.id) { <option [ngValue]="s.id">{{ studentLabel(s) }}</option> }
+            </select>
+            <app-field-error [control]="historyForm.get('studentId')" label="Student" />
+          </div>
+          <div class="field align-end">
+            <button type="submit" class="btn btn-primary" [disabled]="running()">
+              @if (running()) { <span class="spinner spinner-sm"></span> } View history
+            </button>
+          </div>
+        </form>
+      </div>
+      @if (history(); as h) {
+        <h3 class="section-title">{{ h.studentName }}</h3>
+        <app-attendance-stats [total]="h.totalDays" [present]="h.presentDays" [absent]="h.absentDays" [percentage]="h.attendancePercentage" />
+        <div class="card">
+          @if (historyRows().length === 0) {
+            <app-empty-state icon="attendance" title="No attendance recorded" message="This student has no attendance records yet." />
+          } @else {
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Date</th><th>Status</th></tr></thead>
+                <tbody>
+                  @for (row of historyRows(); track row.date) {
+                    <tr>
+                      <td data-label="Date">{{ row.date }}</td>
+                      <td data-label="Status"><span class="badge" [class.badge-success]="row.status === 'PRESENT'" [class.badge-danger]="row.status === 'ABSENT'">{{ row.status }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @case ('monthly') {
+      <div class="card">
+        <form class="filters-grid" [formGroup]="monthlyForm" (ngSubmit)="runMonthly()" novalidate>
+          <div class="field grow">
+            <label for="m-student">Student</label>
+            <select id="m-student" class="input" formControlName="studentId">
+              <option [ngValue]="null">Select a student…</option>
+              @for (s of students(); track s.id) { <option [ngValue]="s.id">{{ studentLabel(s) }}</option> }
+            </select>
+            <app-field-error [control]="monthlyForm.get('studentId')" label="Student" />
+          </div>
+          <div class="field">
+            <label for="m-month">Month</label>
+            <select id="m-month" class="input" formControlName="month">
+              @for (m of months; track m; let i = $index) { <option [ngValue]="i + 1">{{ m }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="m-year">Year</label>
+            <input id="m-year" class="input" type="number" formControlName="year" />
+            <app-field-error [control]="monthlyForm.get('year')" label="Year" />
+          </div>
+          <div class="field align-end">
+            <button type="submit" class="btn btn-primary" [disabled]="running()">
+              @if (running()) { <span class="spinner spinner-sm"></span> } View report
+            </button>
+          </div>
+        </form>
+      </div>
+      @if (monthly(); as m) {
+        <h3 class="section-title">{{ m.studentName }} · {{ months[m.month - 1] }} {{ m.year }}</h3>
+        @if (m.totalDays === 0) {
+          <div class="card"><app-empty-state icon="attendance" title="No attendance in this month" message="No records were found for the selected month." /></div>
+        } @else {
+          <app-attendance-stats [total]="m.totalDays" [present]="m.presentDays" [absent]="m.absentDays" [percentage]="m.attendancePercentage" />
+        }
+      }
+    }
+
+    @case ('class') {
+      <div class="card">
+        <form class="filters-grid" [formGroup]="classForm" (ngSubmit)="runClass()" novalidate>
+          <div class="field grow">
+            <label for="c-class">Class</label>
+            <select id="c-class" class="input" formControlName="classId">
+              <option [ngValue]="null">Select a class…</option>
+              @for (c of classes(); track c.id) { <option [ngValue]="c.id">{{ classLabel(c) }}</option> }
+            </select>
+            <app-field-error [control]="classForm.get('classId')" label="Class" />
+          </div>
+          <div class="field">
+            <label for="c-month">Month</label>
+            <select id="c-month" class="input" formControlName="month">
+              @for (m of months; track m; let i = $index) { <option [ngValue]="i + 1">{{ m }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="c-year">Year</label>
+            <input id="c-year" class="input" type="number" formControlName="year" />
+            <app-field-error [control]="classForm.get('year')" label="Year" />
+          </div>
+          <div class="field align-end">
+            <button type="submit" class="btn btn-primary" [disabled]="running()">
+              @if (running()) { <span class="spinner spinner-sm"></span> } View report
+            </button>
+          </div>
+        </form>
+      </div>
+      @if (classMonthly(); as c) {
+        <h3 class="section-title">{{ c.className }} – {{ c.section }} · {{ months[c.month - 1] }} {{ c.year }}</h3>
+        <div class="card">
+          @if (classRows().length === 0) {
+            <app-empty-state icon="students" title="No students in this class" message="Nothing to report for this class and month." />
+          } @else {
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Student</th><th>Days</th><th>Present</th><th>Absent</th><th>Attendance</th></tr></thead>
+                <tbody>
+                  @for (r of classRows(); track r.studentId) {
+                    <tr>
+                      <td data-label="Student"><strong>{{ r.studentName }}</strong></td>
+                      <td data-label="Days">{{ r.totalDays }}</td>
+                      <td data-label="Present"><span class="text-success">{{ r.presentDays }}</span></td>
+                      <td data-label="Absent"><span class="text-danger">{{ r.absentDays }}</span></td>
+                      <td data-label="Attendance">
+                        @if (r.totalDays === 0) { <span class="muted">No data</span> } @else {
+                          <div class="bar-cell">
+                            <div class="bar"><span [style.width.%]="r.attendancePercentage" [class]="'fill-' + rowTone(r.attendancePercentage)"></span></div>
+                            <span>{{ r.attendancePercentage | number: '1.0-1' }}%</span>
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Class total</td><td>{{ classTotals().total }}</td><td>{{ classTotals().present }}</td><td>{{ classTotals().absent }}</td>
+                    <td>{{ classTotals().pct | number: '1.0-1' }}%</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @case ('range') {
+      <div class="card">
+        <form class="filters-grid" [formGroup]="rangeForm" (ngSubmit)="runRange()" novalidate>
+          <div class="field grow">
+            <label for="r-student">Student</label>
+            <select id="r-student" class="input" formControlName="studentId">
+              <option [ngValue]="null">Select a student…</option>
+              @for (s of students(); track s.id) { <option [ngValue]="s.id">{{ studentLabel(s) }}</option> }
+            </select>
+            <app-field-error [control]="rangeForm.get('studentId')" label="Student" />
+          </div>
+          <div class="field">
+            <label for="r-start">From</label>
+            <input id="r-start" class="input" type="date" formControlName="startDate" />
+            <app-field-error [control]="rangeForm.get('startDate')" label="Start date" />
+          </div>
+          <div class="field">
+            <label for="r-end">To</label>
+            <input id="r-end" class="input" type="date" formControlName="endDate" />
+            <app-field-error [control]="rangeForm.get('endDate')" label="End date" />
+          </div>
+          <div class="field align-end">
+            <button type="submit" class="btn btn-primary" [disabled]="running()">
+              @if (running()) { <span class="spinner spinner-sm"></span> } View report
+            </button>
+          </div>
+        </form>
+        @if (rangeForm.errors?.['dateOrder'] && (rangeForm.touched || rangeForm.dirty)) {
+          <p class="field-error">The start date must not be after the end date.</p>
+        }
+      </div>
+      @if (range(); as r) {
+        <h3 class="section-title">{{ r.studentName }} · {{ r.startDate }} to {{ r.endDate }}</h3>
+        @if (r.totalDays === 0) {
+          <div class="card"><app-empty-state icon="attendance" title="No attendance in this range" message="No records were found between these dates." /></div>
+        } @else {
+          <app-attendance-stats [total]="r.totalDays" [present]="r.presentDays" [absent]="r.absentDays" [percentage]="r.attendancePercentage" />
+        }
+      }
+    }
+  }
+  }
+}

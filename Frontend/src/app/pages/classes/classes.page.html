@@ -1,0 +1,91 @@
+<div class="page-head">
+  <div>
+    <h2>Classes</h2>
+    <p class="muted">Classes and their sections.</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="openCreate()"><app-icon name="plus" /> Create class</button>
+</div>
+
+@if (usingWorkaround) {
+  <div class="alert alert-info">
+    The backend has no "list all classes" endpoint, so this list shows classes that have students plus classes created or
+    looked up in this browser. If a class is missing, add it by exact name below.
+  </div>
+}
+
+<div class="card">
+  <div class="toolbar">
+    <div class="search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Search class name" aria-label="Search classes"
+             [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    </div>
+    <select class="input" aria-label="Filter by section" [ngModel]="sectionFilter()" (ngModelChange)="sectionFilter.set($event)">
+      <option value="">All sections</option>
+      @for (s of sections; track s) { <option [value]="s">Section {{ s }}</option> }
+    </select>
+    @if (usingWorkaround) {
+      <div class="inline-group">
+        <input class="input" type="text" placeholder="Add existing class by name (e.g. 10th)" aria-label="Class name to look up"
+               [ngModel]="lookupName()" (ngModelChange)="lookupName.set($event)" (keyup.enter)="lookup()" />
+        <button type="button" class="btn btn-secondary" [disabled]="lookingUp() || !lookupName().trim()" (click)="lookup()">Add</button>
+      </div>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="loading"><span class="spinner"></span> Loading classes…</div>
+  } @else if (error()) {
+    <div class="alert alert-error">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn btn-sm" (click)="load()">Retry</button>
+    </div>
+  } @else if (classes().length === 0) {
+    <app-empty-state icon="classes" title="No classes found" message="Create a class so students can be enrolled and attendance can be marked.">
+      <button type="button" class="btn btn-primary" (click)="openCreate()">Create class</button>
+    </app-empty-state>
+  } @else if (filtered().length === 0) {
+    <app-empty-state icon="search" title="No matching classes" message="Try a different name or section." />
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Class</th><th>Section</th><th>Students</th></tr></thead>
+        <tbody>
+          @for (c of filtered(); track c.id) {
+            <tr>
+              <td data-label="Class"><strong>{{ c.className }}</strong></td>
+              <td data-label="Section"><span class="badge badge-info">Section {{ c.classSection }}</span></td>
+              <td data-label="Students">{{ studentCounts().get(c.id) ?? 0 }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="table-foot muted">Editing or deleting a single class isn't available: the backend only supports creating classes.</p>
+  }
+</div>
+
+@if (formOpen()) {
+  <app-modal title="Create class" (closed)="formOpen.set(false)">
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="c-name">Class name</label>
+        <input id="c-name" class="input" placeholder="e.g. 8th, 9th, 10th" formControlName="className" autocomplete="off" />
+        <app-field-error [control]="form.get('className')" label="Class name" />
+      </div>
+      <div class="field">
+        <label for="c-section">Section</label>
+        <select id="c-section" class="input" formControlName="classSection">
+          @for (s of sections; track s) { <option [value]="s">Section {{ s }}</option> }
+        </select>
+        <app-field-error [control]="form.get('classSection')" label="Section" />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="formOpen.set(false)">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner spinner-sm"></span> } Create class
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
