@@ -1,4 +1,4 @@
-package org.example.schoolattandencesystem.contoller;
+package org.example.schoolattandencesystem.controller;
 
 import org.example.schoolattandencesystem.entity.Subject;
 import org.example.schoolattandencesystem.service.SubjectService;

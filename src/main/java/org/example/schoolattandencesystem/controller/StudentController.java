@@ -1,5 +1,7 @@
-package org.example.schoolattandencesystem.contoller;
+package org.example.schoolattandencesystem.controller;
 
+import ch.qos.logback.core.CoreConstants;
+import jakarta.validation.Valid;
 import org.example.schoolattandencesystem.entity.ClassSection;
 import org.example.schoolattandencesystem.entity.Student;
 import org.example.schoolattandencesystem.service.StudentService;
@@ -16,7 +18,7 @@ public class StudentController {
     private StudentService studentService;
 
     @PostMapping("/addStudent")
-    public boolean createStudent(@RequestBody Student student) {
+    public boolean createStudent(@Valid @RequestBody Student student) {
 
         boolean s  = studentService.addStudent(student);
 
@@ -35,6 +37,7 @@ public class StudentController {
     public Optional<Student> getStudent(@PathVariable Long id) {
 
         return studentService.getStudentByRollNo(id);
+
     }
 
     @GetMapping("/getAllStudents")
@@ -45,7 +48,7 @@ public class StudentController {
     }
 
     @PutMapping("/updateStudents/{id}")
-    public boolean updateStudentData(@PathVariable Long id, @RequestBody Student student) {
+    public boolean updateStudentData(@PathVariable Long id, @Valid @RequestBody Student student) {
 
         boolean status = false;
 
@@ -86,7 +89,7 @@ public class StudentController {
     }
 
     @GetMapping("/displayByName/{name}")
-    public List<Student> displayStudentByName(@PathVariable String name){
+    public List<Student> displayStudentByName(@PathVariable String name) {
 
         List<Student> li =  studentService.findByName(name);
 
@@ -96,7 +99,19 @@ public class StudentController {
 
     @GetMapping("/displayByRollNo/{id}")
     public Student displayStudentByRollNo(@PathVariable Integer id){
-        return studentService.findByRollNo(id);
+
+        System.out.println("Displaying Student by Roll No : "+id);
+
+        Student student =  studentService.findByRollNo(id);
+
+        System.out.println("Student Found: "+ student);
+
+        if(id==null) {
+            throw new RuntimeException("Student Not Found !!");
+        }
+
+        return student;
+
     }
 
     @GetMapping("/displayByEmail/{email}")

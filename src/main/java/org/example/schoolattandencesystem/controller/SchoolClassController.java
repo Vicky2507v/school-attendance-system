@@ -1,9 +1,8 @@
-package org.example.schoolattandencesystem.contoller;
+package org.example.schoolattandencesystem.controller;
 
 import org.example.schoolattandencesystem.entity.SchoolClass;
 import org.example.schoolattandencesystem.service.SchoolClassService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.javapoet.ClassName;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

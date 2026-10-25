@@ -1,5 +1,6 @@
-package org.example.schoolattandencesystem.contoller;
+package org.example.schoolattandencesystem.controller;
 
+import jakarta.validation.Valid;
 import org.example.schoolattandencesystem.entity.Teachers;
 import org.example.schoolattandencesystem.service.TeacherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ public class TeacherController {
     private TeacherService teacherService;
 
     @PostMapping("/addTeacher")
-    public boolean addDataTeacher(@RequestBody Teachers teacher) {
+    public boolean addDataTeacher(@Valid @RequestBody Teachers teacher) {
 
         boolean val = teacherService.addTeacher(teacher);
 
