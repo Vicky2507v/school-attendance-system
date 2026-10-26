@@ -1,0 +1,33 @@
+<main class="login-wrap">
+  <section class="login-card" aria-labelledby="login-title">
+    <div class="login-brand">
+      <span class="brand-mark">🎓</span>
+      <h1 id="login-title">School Attendance</h1>
+      <p class="muted">Sign in to continue</p>
+    </div>
+
+    @if (notice(); as n) { <div class="alert alert-info" role="status">{{ n }}</div> }
+    @if (error(); as e) { <div class="alert alert-error" role="alert">{{ e }}</div> }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" class="input" formControlName="username" autocomplete="username" autocapitalize="none" spellcheck="false" />
+        <app-field-error [control]="form.get('username')" label="Username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-row">
+          <input id="password" class="input" formControlName="password" autocomplete="current-password"
+                 [type]="showPassword() ? 'text' : 'password'" />
+          <button type="button" class="btn btn-ghost btn-sm" (click)="showPassword.set(!showPassword())"
+                  [attr.aria-pressed]="showPassword()">{{ showPassword() ? 'Hide' : 'Show' }}</button>
+        </div>
+        <app-field-error [control]="form.get('password')" label="Password" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="loading()">
+        @if (loading()) { <span class="spinner spinner-sm"></span> Signing in… } @else { Sign in }
+      </button>
+    </form>
+  </section>
+</main>

@@ -1,0 +1,99 @@
+<div class="page-head">
+  <div>
+    <h2>Dashboard</h2>
+    <p class="muted">Welcome back, <strong>{{ username() }}</strong>. Overview of attendance for the selected date.</p>
+  </div>
+  <div class="field inline-field">
+    <label for="d-date">Attendance date</label>
+    <input id="d-date" class="input" type="date" [max]="today" [value]="date()" (change)="onDate($any($event.target).value)" />
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="card"><div class="loading"><span class="spinner"></span> Loading dashboard…</div></div>
+} @else if (error()) {
+  <div class="alert alert-error">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn btn-sm" (click)="load()">Retry</button>
+  </div>
+} @else {
+  <section class="stat-grid stat-grid-3">
+    <a class="stat-card link" routerLink="/students">
+      <div class="stat-icon indigo"><app-icon name="students" /></div>
+      <div><p class="stat-label">Total students</p><p class="stat-value">{{ students().length }}</p></div>
+    </a>
+    @if (isAdmin()) {
+    <a class="stat-card link" routerLink="/teachers">
+      <div class="stat-icon teal"><app-icon name="teachers" /></div>
+      <div><p class="stat-label">Total teachers</p><p class="stat-value">{{ teachers().length }}</p></div>
+    </a>
+    }
+    <a class="stat-card link" routerLink="/classes">
+      <div class="stat-icon amber"><app-icon name="classes" /></div>
+      <div>
+        <p class="stat-label">Total classes</p>
+        <p class="stat-value">{{ classes().length }}</p>
+        @if (classNote) { <p class="stat-note">Classes with students or added in this browser</p> }
+      </div>
+    </a>
+    <div class="stat-card">
+      <div class="stat-icon green"><app-icon name="check" /></div>
+      <div><p class="stat-label">Present on {{ date() }}</p><p class="stat-value text-success">{{ totalPresent() }}</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red"><app-icon name="x" /></div>
+      <div><p class="stat-label">Absent on {{ date() }}</p><p class="stat-value text-danger">{{ totalAbsent() }}</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon indigo"><app-icon name="reports" /></div>
+      <div>
+        <p class="stat-label">Attendance rate</p>
+        @if (overallPercentage() !== null) {
+          <p class="stat-value">{{ overallPercentage() | number: '1.0-1' }}%</p>
+          <p class="stat-note">Across {{ markedClasses().length }} class(es) with attendance marked</p>
+        } @else {
+          <p class="stat-value">—</p>
+          <p class="stat-note">No attendance marked for this date</p>
+        }
+      </div>
+    </div>
+  </section>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>Attendance by class · {{ date() }}</h3>
+      <a class="btn btn-primary btn-sm" routerLink="/attendance"><app-icon name="attendance" /> Mark attendance</a>
+    </div>
+    @if (summaryLoading()) {
+      <div class="loading"><span class="spinner"></span> Loading attendance…</div>
+    } @else if (classes().length === 0) {
+      <app-empty-state icon="classes" title="No classes yet" message="Create a class and enrol students to see attendance here." />
+    } @else if (summaries().length === 0) {
+      <app-empty-state icon="attendance" title="No attendance data" message="The attendance summary could not be loaded for this date." />
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Class</th><th>Enrolled</th><th>Present</th><th>Absent</th><th>Not marked</th><th>Rate</th></tr></thead>
+          <tbody>
+            @for (s of summaries(); track s.className + '-' + s.section) {
+              <tr>
+                <td data-label="Class"><strong>{{ s.className }}</strong> <span class="badge badge-info">{{ s.section }}</span></td>
+                <td data-label="Enrolled">{{ s.totalStudents }}</td>
+                <td data-label="Present"><span class="text-success">{{ s.present }}</span></td>
+                <td data-label="Absent"><span class="text-danger">{{ s.absent }}</span></td>
+                <td data-label="Not marked">{{ notMarked(s) }}</td>
+                <td data-label="Rate">
+                  @if (s.present + s.absent === 0) {
+                    <span class="muted">Not marked</span>
+                  } @else {
+                    {{ rowPercent(s) | number: '1.0-1' }}%
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

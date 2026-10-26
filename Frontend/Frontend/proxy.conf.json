@@ -1,0 +1,15 @@
+{
+  "/api/auth": {
+    "target": "http://localhost:8282",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "info"
+  },
+  "/api": {
+    "target": "http://localhost:8282",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api": "" },
+    "logLevel": "info"
+  }
+}

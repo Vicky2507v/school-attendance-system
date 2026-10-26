@@ -1,0 +1,41 @@
+<div class="shell" [class.nav-open]="navOpen()">
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <span class="brand-mark">🎓</span>
+      <div>
+        <strong>School Attendance</strong>
+        <small>Administration</small>
+      </div>
+    </div>
+    <nav>
+      @for (l of links(); track l.path) {
+        <a [routerLink]="l.path" routerLinkActive="active" (click)="navOpen.set(false)">
+          <app-icon [name]="l.icon" /> <span>{{ l.label }}</span>
+        </a>
+      }
+    </nav>
+    <button type="button" class="logout-side" (click)="auth.logout()">Sign out</button>
+  </aside>
+  <div class="scrim" (click)="navOpen.set(false)"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-btn" aria-label="Toggle menu" (click)="navOpen.set(!navOpen())">
+        <app-icon name="menu" />
+      </button>
+      <span class="topbar-title">School Attendance Management</span>
+      <span class="spacer"></span>
+      <span class="topbar-date">{{ today | date: 'fullDate' }}</span>
+      <div class="user-chip" title="Signed in">
+        <span class="avatar">{{ (auth.username() ?? '?').charAt(0).toUpperCase() }}</span>
+        <span class="user-meta"><strong>{{ auth.username() }}</strong><small>{{ auth.role() }}</small></span>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="auth.logout()">Sign out</button>
+    </header>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+<app-toast-container />
+<app-confirm-dialog />
